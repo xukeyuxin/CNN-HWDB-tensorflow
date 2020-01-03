@@ -32,6 +32,7 @@ class OCR(op_base):
             x = ly.relu(x)
             
             x = ly.maxpooling2d(x) ## 32,32,64
+            print(x.shape)
 
             x = tf.pad(x,[[0,0],[3,3],[3,3],[0,0]],"REFLECT")
             x = ly.conv2d(x,128,kernal_size=7,name = 'conv_1',padding='VALID',use_bias=True)
@@ -39,6 +40,7 @@ class OCR(op_base):
             x = ly.relu(x)
 
             x = ly.maxpooling2d(x) ## 16,16,128
+            print(x.shape)
 
             x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
             x = ly.conv2d(x,256,kernal_size=7,name = 'conv_2',padding='VALID',use_bias=True)
@@ -46,6 +48,7 @@ class OCR(op_base):
             x = ly.relu(x)
 
             x = ly.maxpooling2d(x) ## 8,8,256
+            print(x.shape)
 
             x = ly.fc(x,1024,name = 'fc_0',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
