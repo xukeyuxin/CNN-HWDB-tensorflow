@@ -22,28 +22,40 @@ class op_base(object):
 
     ### gray img mix with white block
     def process(self,input):
-        process_input = cv2.threshold(input, 220, 255, 0)[1] / 255.
         height,weight = input.shape[:2]
+        ## threshold
+        threshold_input = cv2.threshold(input, 220, 255, 0)[1]
+
+        ## gray2float
+        process_input = threshold_input / 255.
 
         ## add white
-        add_size = np.abs(height - weight) / 2
+        add_size_0 = np.floor(np.abs(height - weight) / 2. ).astype(np.int32)
+        add_size_1 = np.ceil(np.abs(height - weight) / 2. ).astype(np.int32)
         if(height > weight):
-            add_block = np.ones([height,add_size],dtype = np.int32)
-            new_input = np.concatenate([add_block, process_input, add_block],axis = 1)
+            add_block_0 = np.ones([height,add_size_0],dtype = np.int32)
+            add_block_1 = np.ones([height,add_size_1],dtype = np.int32)
+            new_input = np.concatenate([add_block_0, process_input, add_block_1],axis = 1)
         elif(weight >= height):
-            add_block = np.ones([add_size, weight],dtype = np.int32)
-            new_input = np.concatenate([add_block, process_input, add_block],axis = 0)   
+            add_block_0 = np.ones([add_size_0, weight],dtype = np.int32)
+            add_block_1 = np.ones([add_size_1, weight],dtype = np.int32)
+            new_input = np.concatenate([add_block_0, process_input, add_block_1],axis = 0)   
 
         ## add margin 
         current_size = new_input.shape[0]
-        margin_size = current_size / 15  
+        margin_size = current_size // 15  
         margin_height = np.ones([margin_size,current_size + 2 * margin_size])
         margin_weight = np.ones([current_size,margin_size])
         margin_input = np.concatenate([margin_weight, new_input, margin_weight],axis = 1)
-        margin_input = np.concatenate([margin_height, new_input, margin_height],axis = 0)
+        margin_input = np.concatenate([margin_height, margin_input, margin_height],axis = 0)
 
         ## resize 64
-        return cv2.resize(margin_input,(64,64))
+        resize_input = cv2.resize(margin_input,(64,64))
+
+        ## expand_dim
+        return np.expand_dims(resize_input, axis = -1)
+        
+
  
     def read_img(self,path,read_type = 'gray'):
         if(read_type == 'gray'):

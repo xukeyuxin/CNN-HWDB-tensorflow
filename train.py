@@ -24,7 +24,7 @@ class OCR(op_base):
         update_lr_op = tf.assign(self.lr,new_lr)
         return update_lr_op
 
-    def classify(self,d_opt,name = 'classify',is_training = True): ### 64,64,3
+    def classify(self,d_opt,name = 'classify',is_training = True): ### 64,64,1
         with tf.variable_scope(name,reuse = tf.AUTO_REUSE):
             x = tf.pad(self.input_img,[[0,0],[5,5],[5,5],[0,0]],"REFLECT")
             x = ly.conv2d(x,64,kernal_size=11,name = 'conv_0',padding='VALID',use_bias=True)
@@ -68,7 +68,7 @@ class OCR(op_base):
             return train_op
 
     def train(self,is_training = True):
-        self.input_img = tf.placeholder(tf.float32,shape = [self.batch_size,self.input_height,self.input_weight,3])
+        self.input_img = tf.placeholder(tf.float32,shape = [self.batch_size,self.input_height,self.input_weight,1])
         self.input_label = tf.placeholder(tf.float32,shape = [self.batch_size,self.class_num])
         self.lr = tf.get_variable('lr',shape = [],initializer = tf.constant_initializer(self.init_lr))
         self.summaries.append(tf.summary.scalar('lr',self.lr))
@@ -94,9 +94,7 @@ class OCR(op_base):
                 try:
                     _item_batch = [ next(train_data_generator) for _ in range(self.batch_size) ]
                     _zip = zip(*_item_batch)
-                    _label_batch, _img_batch = [ np.concatenate( item, axis = 0) for item in _zip ]
-                    print(_label_batch.shape)
-                    print(_img_batch.shape)
+                    label_batch, img_batch = [ np.concatenate( item, axis = 0) for item in _zip ]
                     run_step += 1 
                 except StopIteration:
                     print('finish opech %s' % epoch_time)
@@ -104,7 +102,7 @@ class OCR(op_base):
                     train_data_generator = self.load_train_data_generator()
                     break
                 
-                _feed_dict = {self.input_img:img_content, self.input_label:img_label}
+                _feed_dict = {self.input_img:img_batch, self.input_label:label_batch}
                 _, summary_str = self.sess.run([ train_op, summary_op ],feed_dict = _feed_dict)
                 if(run_step % 10 == 0):
                     self.summary_writer.add_summary(summary_str,run_step)
