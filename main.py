@@ -21,7 +21,7 @@ parser.add_argument("-lg", "--summary_dir", type=str, default='logs')
 parser.add_argument("-mp", "--model_save_path", type=str, default='model')
 
 args = parser.parse_args()
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 dir_names = ['logs','model','data']
