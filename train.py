@@ -25,22 +25,28 @@ class OCR(op_base):
         update_lr_op = tf.assign(self.lr,new_lr)
         return update_lr_op
 
-    def classify(self,d_opt,name = 'classify',is_training = True):
+    def classify(self,d_opt,name = 'classify',is_training = True): ### 64,64,3
         with tf.variable_scope(name = name,reuse = tf.AUTO_REUSE):
             x = tf.pad(self.input_img,[[0,0],[5,5],[5,5],[0,0]],"REFLECT")
             x = ly.conv2d(x,64,kernal_size=11,name = 'conv_0',padding='VAILD',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_0',is_training = is_training)
             x = ly.relu(x)
+            
+            x = ly.maxpooling2d(x) ## 32,32,64
 
             x = tf.pad(x,[[0,0],[3,3],[3,3],[0,0]],"REFLECT")
             x = ly.conv2d(x,128,kernal_size=7,name = 'conv_1',padding='VAILD',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_1',is_training = is_training)
             x = ly.relu(x)
 
+            x = ly.maxpooling2d(x) ## 16,16,128
+
             x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
             x = ly.conv2d(x,256,kernal_size=7,name = 'conv_2',padding='VAILD',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_2',is_training = is_training)
             x = ly.relu(x)
+
+            x = ly.maxpooling2d(x) ## 8,8,256
 
             x = ly.fc(x,1024,name = 'fc_0',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
