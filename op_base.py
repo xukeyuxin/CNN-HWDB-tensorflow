@@ -17,7 +17,7 @@ class op_base(object):
             dir_path = os.path.join('data/train',dir_item)
             img_list = os.listdir(dir_path)
             item_list = [ (dir_item, os.path.join(dir_path,img_name_item)) for img_name_item in img_list ]
-            image_list += item_list
+            self.image_list += item_list
         self.shuffle()
 
     ### gray img mix with white block
