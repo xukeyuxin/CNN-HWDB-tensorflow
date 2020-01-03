@@ -43,4 +43,6 @@ if __name__ == '__main__':
         model = OCR(args,sess)
         if(args.action == 'train'):
             model.train()
+        elif(args.action == 'eval'):
+            model.eval()
 

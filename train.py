@@ -9,8 +9,14 @@ class OCR(op_base):
     def __init__(self,args,sess):
         op_base.__init__(self,args)
         self.sess = sess
-        self.sess_arg = tf.Session()
         self.summaries = []
+        self.init_base_graph()
+
+    def init_base_graph(self):
+        self.input_img = tf.placeholder(tf.float32,shape = [self.batch_size,self.input_height,self.input_weight,1])
+        self.input_label = tf.placeholder(tf.float32,shape = [self.batch_size,self.class_num])
+        self.lr = tf.get_variable('lr',shape = [],initializer = tf.constant_initializer(self.init_lr))
+        self.summaries.append(tf.summary.scalar('lr',self.lr))
 
     def get_vars(self, name, scope=None):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=name)
@@ -24,7 +30,7 @@ class OCR(op_base):
         update_lr_op = tf.assign(self.lr,new_lr)
         return update_lr_op
 
-    def classify(self,d_opt,name = 'classify',is_training = True): ### 64,64,1
+    def classify(self,d_opt = None,name = 'classify',is_training = True): ### 64,64,1
         with tf.variable_scope(name,reuse = tf.AUTO_REUSE):
             x = tf.pad(self.input_img,[[0,0],[5,5],[5,5],[0,0]],"REFLECT")
             x = ly.conv2d(x,64,kernal_size=11,name = 'conv_0',padding='VALID',use_bias=True)
@@ -32,7 +38,6 @@ class OCR(op_base):
             x = ly.relu(x)
             
             x = ly.maxpooling2d(x) ## 32,32,64
-            print(x.shape)
 
             x = tf.pad(x,[[0,0],[3,3],[3,3],[0,0]],"REFLECT")
             x = ly.conv2d(x,128,kernal_size=7,name = 'conv_1',padding='VALID',use_bias=True)
@@ -40,7 +45,6 @@ class OCR(op_base):
             x = ly.relu(x)
 
             x = ly.maxpooling2d(x) ## 16,16,128
-            print(x.shape)
 
             x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
             x = ly.conv2d(x,256,kernal_size=3,name = 'conv_2',padding='VALID',use_bias=True)
@@ -48,7 +52,18 @@ class OCR(op_base):
             x = ly.relu(x)
 
             x = ly.maxpooling2d(x) ## 8,8,256
-            print(x.shape)
+
+            # x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
+            # x = ly.conv2d(x,512,kernal_size=3,name = 'conv_3',padding='VALID',use_bias=True)
+            # x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
+            # x = ly.relu(x)
+
+            # x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
+            # x = ly.conv2d(x,256,kernal_size=3,name = 'conv_4',padding='VALID',use_bias=True)
+            # x = ly.batch_normal(x,name = 'bn_4',is_training = is_training)
+            # x = ly.relu(x)
+
+            # x = ly.maxpooling2d(x) ## 8,8,512
 
             x = ly.fc(x,1024,name = 'fc_0',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
@@ -56,22 +71,32 @@ class OCR(op_base):
             x = tf.nn.dropout(x,keep_prob = 0.5)
 
             x = ly.fc(x,self.class_num,name = 'fc_1',use_bias=True)
+            self.pred_x_index = tf.argmax(tf.nn.softmax(x),axis = -1)
+            self.pred_x_value = tf.reduce_max(tf.nn.softmax(x),axis = -1)
 
-            cross_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.input_label,logits = x),axis = 0)
-            l2_loss = 0.0005 *  tf.reduce_sum( [   tf.nn.l2_loss(var) for var in self.get_single_var('classify/fc') ] )
+            if(is_training):
+                cross_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.input_label,logits = x),axis = 0)
+                l2_loss = 0.0005 *  tf.reduce_sum( [   tf.nn.l2_loss(var) for var in self.get_single_var('classify/fc') ] )
+                loss = cross_loss + l2_loss 
+                self.summaries.append(tf.summary.scalar('loss',loss))
+                
+                _grad = d_opt.compute_gradients(loss,var_list=self.get_vars('classify'))
+                train_op = d_opt.apply_gradients(_grad)
 
-            loss = cross_loss + l2_loss 
-            self.summaries.append(tf.summary.scalar('loss',loss))
-            
-            _grad = d_opt.compute_gradients(loss,var_list=self.get_vars('classify'))
-            train_op = d_opt.apply_gradients(_grad)
-            return train_op
+                return train_op
+
+
+    def accurity(self,label_batch_index,pred_x_index):
+        acc = np.sum( [ int(index_real == index_pred) for index_real, index_pred in zip(*[label_batch_index,pred_x_index ]) ] ) / self.batch_size
+        return acc
+    
+    def load_one_batch(self,data_generator):
+        _item_batch = [ next(data_generator) for _ in range(self.batch_size) ]
+        _zip = zip(*_item_batch)
+        label_batch, img_batch = [ np.concatenate( item, axis = 0) for item in _zip ]
+        return label_batch, img_batch
 
     def train(self,is_training = True):
-        self.input_img = tf.placeholder(tf.float32,shape = [self.batch_size,self.input_height,self.input_weight,1])
-        self.input_label = tf.placeholder(tf.float32,shape = [self.batch_size,self.class_num])
-        self.lr = tf.get_variable('lr',shape = [],initializer = tf.constant_initializer(self.init_lr))
-        self.summaries.append(tf.summary.scalar('lr',self.lr))
         
         d_opt = tf.train.MomentumOptimizer(self.lr,0.9)
         train_op = self.classify(d_opt,is_training = is_training)
@@ -92,10 +117,9 @@ class OCR(op_base):
                 self.sess.run(lr_update_op)
             while True:
                 try:
-                    _item_batch = [ next(train_data_generator) for _ in range(self.batch_size) ]
-                    _zip = zip(*_item_batch)
-                    label_batch, img_batch = [ np.concatenate( item, axis = 0) for item in _zip ]
+                    label_batch, img_batch = self.load_one_batch(train_data_generator)
                     run_step += 1 
+
                 except StopIteration:
                     print('finish opech %s' % epoch_time)
                     self.shuffle()
@@ -103,11 +127,44 @@ class OCR(op_base):
                     break
                 
                 _feed_dict = {self.input_img:img_batch, self.input_label:label_batch}
-                _, summary_str = self.sess.run([ train_op, summary_op ],feed_dict = _feed_dict)
+                _, pred_x_index, summary_str = self.sess.run([ train_op, self.pred_x_index, summary_op ],feed_dict = _feed_dict)
                 if(run_step % 10 == 0):
                     self.summary_writer.add_summary(summary_str,run_step)
-                if(run_step % 500 == 0):
+
+                if(run_step % 1000 == 0):
+                    ### train acc
+                    label_batch_index = np.argmax(label_batch, axis = -1)
+                    self.accurity(label_batch_index,pred_x_index)
                     self.saver.save(self.sess,os.path.join(self.model_save_path,'classify_checkpoint_%s' % run_step))
+        
+
+    def eval(self):
+        ## build graph
+        self.classify(is_training = False)
+        ## saver
+        self.saver = tf.train.Saver(max_to_keep=5)
+        ## init
+        self.sess.run(tf.global_variables_initializer())
+        ## restore
+        self.saver.restore(self.sess, tf.train.latest_checkpoint(self.model_save_path))
+        ## test data
+        test_data_generator = self.load_train_data_generator(load_path='test')
+
+        final_acc = []
+        while True:
+            try:
+                label_batch, img_batch = self.load_one_batch(test_data_generator)
+                _feed_dict = {self.input_img:img_batch, self.input_label:label_batch}
+                pred_x_index = self.sess.run( self.pred_x_index,feed_dict = _feed_dict)
+                label_batch_index = np.argmax(label_batch, axis = -1)
+                final_acc.append(self.accurity(label_batch_index,pred_x_index))
+            except StopIteration:
+                print('finish eval %s' % np.mean(final_acc))
+
+
+
+        
+
                 
 
 

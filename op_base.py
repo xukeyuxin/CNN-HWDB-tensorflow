@@ -8,8 +8,10 @@ import numpy as np
 class op_base(object):
     def __init__(self,args):
         self.__dict__ = args.__dict__
+
     def shuffle(self):
         return random.shuffle(self.image_list)
+        
     def init_train_data(self):
         dir_list = os.listdir('data/train')
         self.image_list = []
@@ -19,6 +21,15 @@ class op_base(object):
             item_list = [ (dir_item, os.path.join(dir_path,img_name_item)) for img_name_item in img_list ]
             self.image_list += item_list
         self.shuffle()
+
+    def init_test_data(self):
+        dir_list = os.listdir('data/test')
+        self.test_image_list = []
+        for dir_item in tqdm(dir_list):
+            dir_path = os.path.join('data/test',dir_item)
+            img_list = os.listdir(dir_path)
+            item_list = [ (dir_item, os.path.join(dir_path,img_name_item)) for img_name_item in img_list ]
+            self.test_image_list += item_list
 
     ### gray img mix with white block
     def process(self,input):
@@ -62,12 +73,18 @@ class op_base(object):
             img_content = cv2.imread(path,0)
             return self.process(img_content)
 
-    def load_train_data_generator(self,init_data = False):
-        if(init_data):
-            self.init_train_data()
-            print('finish init train data')
+    def load_train_data_generator(self,load_path = 'train',init_data = False):
         one_batch_feed = []
-        for img_label,img_path in tqdm(self.image_list):
+        if(load_path == 'train'):
+            if(init_data):
+                self.init_train_data()
+                print('finish init train data')
+            _data_img_list = self.image_list
+        elif(load_path == 'test'):
+            self.init_test_data()
+            _data_img_list = self.test_image_list
+
+        for img_label,img_path in tqdm(_data_img_list):
             label_index = int(img_label)
             label_matrix = np.zeros((self.class_num),dtype = np.int32)
             label_matrix[label_index] = 1
@@ -77,5 +94,6 @@ class op_base(object):
             img_content = np.expand_dims(img_content,axis = 0)
 
             yield label_matrix, img_content
+
 
 
