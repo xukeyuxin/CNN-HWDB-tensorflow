@@ -8,8 +8,6 @@ import sys
 
 parser = argparse.ArgumentParser()
 
-
-# Train Iteration
 parser.add_argument("-iw", "--input_weight", type=int, default=152)
 parser.add_argument("-ih", "--input_height", type=int, default=152)
 
@@ -21,8 +19,6 @@ parser.add_argument("-l", "--init_lr", type=float, default=1e-2)
 parser.add_argument("-ac", "--action", type=str, default='train')
 parser.add_argument("-lg", "--summary_dir", type=str, default='logs')
 parser.add_argument("-mp", "--model_save_path", type=str, default='model')
-
-
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -44,7 +40,7 @@ if __name__ == '__main__':
     # config.gpu_options.allow_growth = True
 
     with tf.Session(config = config) as sess:
-        model = OCR(sess,args)
+        model = OCR(args,sess)
         if(args.action == 'train'):
             model.train()
 

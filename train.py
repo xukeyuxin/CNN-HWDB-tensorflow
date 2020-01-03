@@ -17,8 +17,7 @@ class OCR(op_base):
 
     def get_single_var(self,name):
         choose_var = [ var for var in tf.global_variables() if var.op.name.startswith(name)]
-        assert len(choose_var) == 1
-        return choose_var[0]
+        return choose_var
     
     def update_lr(self):
         new_lr = 0.5 * self.lr
@@ -26,23 +25,23 @@ class OCR(op_base):
         return update_lr_op
 
     def classify(self,d_opt,name = 'classify',is_training = True): ### 64,64,3
-        with tf.variable_scope(name = name,reuse = tf.AUTO_REUSE):
+        with tf.variable_scope(name,reuse = tf.AUTO_REUSE):
             x = tf.pad(self.input_img,[[0,0],[5,5],[5,5],[0,0]],"REFLECT")
-            x = ly.conv2d(x,64,kernal_size=11,name = 'conv_0',padding='VAILD',use_bias=True)
+            x = ly.conv2d(x,64,kernal_size=11,name = 'conv_0',padding='VALID',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_0',is_training = is_training)
             x = ly.relu(x)
             
             x = ly.maxpooling2d(x) ## 32,32,64
 
             x = tf.pad(x,[[0,0],[3,3],[3,3],[0,0]],"REFLECT")
-            x = ly.conv2d(x,128,kernal_size=7,name = 'conv_1',padding='VAILD',use_bias=True)
+            x = ly.conv2d(x,128,kernal_size=7,name = 'conv_1',padding='VALID',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_1',is_training = is_training)
             x = ly.relu(x)
 
             x = ly.maxpooling2d(x) ## 16,16,128
 
             x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
-            x = ly.conv2d(x,256,kernal_size=7,name = 'conv_2',padding='VAILD',use_bias=True)
+            x = ly.conv2d(x,256,kernal_size=7,name = 'conv_2',padding='VALID',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_2',is_training = is_training)
             x = ly.relu(x)
 
@@ -55,11 +54,12 @@ class OCR(op_base):
 
             x = ly.fc(x,self.class_num,name = 'fc_1',use_bias=True)
 
-            cross_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.input_label,logits = x)
-            l2_loss_f1 = 0.0005 * tf.nn.l2_loss(self.get_single_var('classify/fc_0'))
-            l2_loss_f2 = 0.0005 * tf.nn.l2_loss(self.get_single_var('classify/fc_1'))
+            cross_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.input_label,logits = x),axis = 0)
+            l2_loss = 0.0005 *  tf.reduce_sum( [   tf.nn.l2_loss(var) for var in self.get_single_var('classify/fc') ] )
 
-            loss = cross_loss + l2_loss_f1 + l2_loss_f2 
+            loss = cross_loss + l2_loss 
+            self.summaries.append(tf.summary.scalar('loss',loss))
+            
             _grad = d_opt.compute_gradients(loss,var_list=self.get_vars('classify'))
             train_op = d_opt.apply_gradients(_grad)
             return train_op
@@ -67,9 +67,10 @@ class OCR(op_base):
     def train(self,is_training = True):
         self.input_img = tf.placeholder(tf.float32,shape = [self.batch_size,self.input_height,self.input_weight,3])
         self.input_label = tf.placeholder(tf.float32,shape = [self.batch_size,self.class_num])
-        self.lr = tf.get_variable('lr',initializer = tf.constant_initializer(self.init_lr))
+        self.lr = tf.get_variable('lr',shape = [],initializer = tf.constant_initializer(self.init_lr))
+        self.summaries.append(tf.summary.scalar('lr',self.lr))
         
-        d_opt = tf.train.AdamOptimizer(self.lr)
+        d_opt = tf.train.MomentumOptimizer(self.lr,0.9)
         train_op = self.classify(d_opt,is_training = is_training)
         summary_op = tf.summary.merge(self.summaries)
         lr_update_op = self.update_lr()
@@ -83,7 +84,7 @@ class OCR(op_base):
         ## start train
         train_data_generator = self.load_train_data_generator(init_data = True)
         run_step = 0
-        for epoch_time in range(self.epoch):
+        for epoch_time in range(1,self.epoch):
             if(epoch_time % 3 == 0):
                 self.sess.run(lr_update_op)
             while True:
@@ -97,7 +98,7 @@ class OCR(op_base):
                     break
                 
                 _feed_dict = {self.input_img:img_content, self.input_label:img_label}
-                _, summary_str = self.sess.run([ train_op, self.summary_op ],feed_dict = _feed_dict)
+                _, summary_str = self.sess.run([ train_op, summary_op ],feed_dict = _feed_dict)
                 if(run_step % 10 == 0):
                     self.summary_writer.add_summary(summary_str,run_step)
                 if(run_step % 500 == 0):

@@ -5,7 +5,7 @@ import cv2
 from tqdm import tqdm
 import numpy as np
 
-class op_base():
+class op_base(object):
     def __init__(self,args):
         self.__dict__ = args.__dict__
     def shuffle(self):
