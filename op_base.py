@@ -57,9 +57,9 @@ class op_base(object):
         one_batch_feed = []
         for img_label,img_path in tqdm(self.image_list):
             label_index = int(img_label)
-            label_matrix = tf.zeros([self.class_num],dtype = tf.int32)
+            label_matrix = np.zeros((self.class_num),dtype = tf.int32)
             label_matrix[label_index] = 1
-            label_matrix = tf.expand_dims(label_matrix,axis = 0)
+            label_matrix = np.expand_dims(label_matrix,axis = 0)
 
             img_content = self.read_img(img_path)
 
