@@ -46,27 +46,27 @@ class OCR(op_base):
 
             x = ly.maxpooling2d(x) ## 16,16,128
 
-            x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
-            x = ly.conv2d(x,256,kernal_size=3,name = 'conv_2',padding='VALID',use_bias=True)
+            x = tf.pad(x,[[0,0],[2,2],[2,2],[0,0]],"REFLECT")
+            x = ly.conv2d(x,256,kernal_size=5,name = 'conv_2',padding='VALID',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_2',is_training = is_training)
             x = ly.relu(x)
 
             x = ly.maxpooling2d(x) ## 8,8,256
 
-            # x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
-            # x = ly.conv2d(x,512,kernal_size=3,name = 'conv_3',padding='VALID',use_bias=True)
-            # x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
-            # x = ly.relu(x)
+            x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
+            x = ly.conv2d(x,512,kernal_size=3,name = 'conv_3',padding='VALID',use_bias=True)
+            x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
+            x = ly.relu(x)
 
-            # x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
-            # x = ly.conv2d(x,256,kernal_size=3,name = 'conv_4',padding='VALID',use_bias=True)
-            # x = ly.batch_normal(x,name = 'bn_4',is_training = is_training)
-            # x = ly.relu(x)
+            x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
+            x = ly.conv2d(x,512,kernal_size=3,name = 'conv_4',padding='VALID',use_bias=True)
+            x = ly.batch_normal(x,name = 'bn_4',is_training = is_training)
+            x = ly.relu(x)
 
-            # x = ly.maxpooling2d(x) ## 8,8,512
+            x = ly.maxpooling2d(x) ## 4,4,512
 
             x = ly.fc(x,1024,name = 'fc_0',use_bias=True)
-            x = ly.batch_normal(x,name = 'bn_3',is_training = is_training)
+            x = ly.batch_normal(x,name = 'bn_5',is_training = is_training)
             x = ly.relu(x)
             x = tf.nn.dropout(x,keep_prob = 0.5)
 
@@ -160,6 +160,7 @@ class OCR(op_base):
                 final_acc.append(self.accurity(label_batch_index,pred_x_index))
             except StopIteration:
                 print('finish eval %s' % np.mean(final_acc))
+                return 
 
 
 
