@@ -92,7 +92,11 @@ class OCR(op_base):
                 self.sess.run(lr_update_op)
             while True:
                 try:
-                    img_label, img_content = next(train_data_generator)
+                    _item_batch = [ next(train_data_generator) for _ in range(self.batch_size) ]
+                    _zip = zip(*_item_batch)
+                    _label_batch, _img_batch = [ np.concatenate( item, axis = 0) for item in _zip ]
+                    print(_label_batch.shape)
+                    print(_img_batch.shape)
                     run_step += 1 
                 except StopIteration:
                     print('finish opech %s' % epoch_time)

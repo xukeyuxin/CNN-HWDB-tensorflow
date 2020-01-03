@@ -28,10 +28,10 @@ class op_base(object):
         ## add white
         add_size = np.abs(height - weight) / 2
         if(height > weight):
-            add_block = np.ones([height,add_size])
+            add_block = np.ones([height,add_size],dtype = np.int32)
             new_input = np.concatenate([add_block, process_input, add_block],axis = 1)
         elif(weight >= height):
-            add_block = np.ones([add_size, weight])
+            add_block = np.ones([add_size, weight],dtype = np.int32)
             new_input = np.concatenate([add_block, process_input, add_block],axis = 0)   
 
         ## add margin 
@@ -62,6 +62,7 @@ class op_base(object):
             label_matrix = np.expand_dims(label_matrix,axis = 0)
 
             img_content = self.read_img(img_path)
+            img_content = np.expand_dims(img_content,axis = 0)
 
             yield label_matrix, img_content
 
