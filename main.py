@@ -8,8 +8,8 @@ import sys
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-iw", "--input_weight", type=int, default=152)
-parser.add_argument("-ih", "--input_height", type=int, default=152)
+parser.add_argument("-iw", "--input_weight", type=int, default=64)
+parser.add_argument("-ih", "--input_height", type=int, default=64)
 
 parser.add_argument("-e", "--epoch", type=int, default=100)
 parser.add_argument("-b", "--batch_size", type=int, default=100)

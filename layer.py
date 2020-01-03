@@ -71,7 +71,7 @@ def deconv2d(input, output_channels=None, output_size=None, name=None, kernel_si
 
         return _deconv2d
 
-def maxpooling2d(input,kernel_size = 2,strides = 1,padding = 'SAME'):
+def maxpooling2d(input,kernel_size = 2,strides = 2,padding = 'SAME'):
     _filter = [1,kernel_size,kernel_size,1]
     _strides = [1,strides,strides,1]
     return tf.nn.max_pool(input,_filter,strides =_strides,padding = padding)

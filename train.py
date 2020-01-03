@@ -43,7 +43,7 @@ class OCR(op_base):
             print(x.shape)
 
             x = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],"REFLECT")
-            x = ly.conv2d(x,256,kernal_size=7,name = 'conv_2',padding='VALID',use_bias=True)
+            x = ly.conv2d(x,256,kernal_size=3,name = 'conv_2',padding='VALID',use_bias=True)
             x = ly.batch_normal(x,name = 'bn_2',is_training = is_training)
             x = ly.relu(x)
 
