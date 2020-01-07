@@ -8,12 +8,12 @@ CNN-HWDB-tensorflow is used for handwritten Chinese character recognition
 
 the network used in this project named M7-1
 <div align="center">
-	<img src="https://github.com/xukeyuxin/GLANN-TF/blob/master/data/net.jpg" width="80%" height="10%"/>
+	<img src="https://github.com/xukeyuxin/CNN-HWDB-tensorflow/blob/master/data/net.jpg" width="80%" height="10%"/>
 </div>
 
 ## Result on test data Top 1
 <div align="center">
-	<img src="https://github.com/xukeyuxin/GLANN-TF/blob/master/data/result.jpg" width="50%" height="10%"/>
+	<img src="https://github.com/xukeyuxin/CNN-HWDB-tensorflow/blob/master/data/result.jpg" width="50%" height="10%"/>
 </div>
 
 ## Run
