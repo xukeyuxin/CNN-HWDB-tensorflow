@@ -12,7 +12,7 @@ the network used in this project named M7-1
 </div>
 
 ## Result on test data Top 1
-<div align="center">
+<div align="left">
 	<img src="https://github.com/xukeyuxin/CNN-HWDB-tensorflow/blob/master/data/result.jpg" width="50%" height="10%"/>
 </div>
 
