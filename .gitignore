@@ -1,3 +1,5 @@
 logs
-data
+data/HW*
+data/test
+data/train
 model
