@@ -2,4 +2,5 @@ logs
 data/HW*
 data/test
 data/train
+eval
 model

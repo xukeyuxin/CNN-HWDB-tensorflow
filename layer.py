@@ -10,7 +10,7 @@ def get_shape(tensor):
 
 def flatten(tensor):
     shape = get_shape(tensor)
-    return tf.reshape(tensor, [shape[0], reduce(lambda x, y: x * y, shape[1:])])
+    return tf.reshape(tensor, [-1, reduce(lambda x, y: x * y, shape[1:])])
 
 def conv2d(input, output_channels, kernal_size=3, strides=1, name=None, use_bias=False, padding='SAME',
            initializer = tf.random_normal_initializer(mean=0, stddev=0.01)):

@@ -95,5 +95,9 @@ class op_base(object):
 
             yield label_matrix, img_content
 
+    def load_hd_img_generator(self,img_list):
+        for img in img_list:
+            yield self.process(img)
+
 
 

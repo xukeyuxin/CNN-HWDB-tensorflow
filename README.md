@@ -33,5 +33,5 @@ python main.py -ac train
 
 [test data](http://www.nlpr.ia.ac.cn/databases/download/feature_data/HWDB1.1tst_gnt.zip)
 
-[model](https://pan.baidu.com/s/1c7E3jBqQ-X5L2pt5-NRgqg)
+[model](https://pan.baidu.com/s/11kNC3-NQUfcoGzLrSv5sGQ)
 

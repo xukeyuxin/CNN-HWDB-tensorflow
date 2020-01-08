@@ -11,10 +11,20 @@ class OCR(op_base):
         self.sess = sess
         self.summaries = []
         self.init_base_graph()
+        self.init_index2txt()
+
+    def init_index2txt(self):
+        self.index2text = {}
+        with open('index2text.txt') as f:
+            start_index = 0
+            for item in f:
+                index, text = item.strip().split()
+                self.index2text[start_index] = text
+                start_index += 1
 
     def init_base_graph(self):
-        self.input_img = tf.placeholder(tf.float32,shape = [self.batch_size,self.input_height,self.input_weight,1])
-        self.input_label = tf.placeholder(tf.float32,shape = [self.batch_size,self.class_num])
+        self.input_img = tf.placeholder(tf.float32,shape = [None,self.input_height,self.input_weight,1])
+        self.input_label = tf.placeholder(tf.float32,shape = [None,self.class_num])
         self.lr = tf.get_variable('lr',shape = [],initializer = tf.constant_initializer(self.init_lr))
         self.summaries.append(tf.summary.scalar('lr',self.lr))
 
@@ -90,11 +100,16 @@ class OCR(op_base):
         acc = np.sum( [ int(index_real == index_pred) for index_real, index_pred in zip(*[label_batch_index,pred_x_index ]) ] ) / self.batch_size
         return acc
     
-    def load_one_batch(self,data_generator):
-        _item_batch = [ next(data_generator) for _ in range(self.batch_size) ]
+    def load_one_batch(self,data_generator,max_length = None):
+        _item_batch = [ next(data_generator) for _ in range(max_length or self.batch_size) ]
         _zip = zip(*_item_batch)
         label_batch, img_batch = [ np.concatenate( item, axis = 0) for item in _zip ]
         return label_batch, img_batch
+    
+    def load_single_img(self,data_generator,max_length = None):
+        _item_batch = np.array([ next(data_generator)  for _ in range(max_length or self.batch_size) ])
+        print(_item_batch.shape)
+        return _item_batch
 
     def train(self,is_training = True):
         
@@ -161,7 +176,33 @@ class OCR(op_base):
             except StopIteration:
                 print('finish eval %s' % np.mean(final_acc))
                 return 
+    
+    def __call__(self,img_list):
+        img_generator = self.load_hd_img_generator(img_list)
+        max_length = len(img_list)
+        self.batch_size = max_length
 
+        ## build graph
+        self.classify(is_training = False)
+        ## saver
+        self.saver = tf.train.Saver(max_to_keep=5)
+        ## init
+        self.sess.run(tf.global_variables_initializer())
+        ## restore
+        self.saver.restore(self.sess, tf.train.latest_checkpoint(self.model_save_path))
+
+        result = []
+        while True:
+            try:
+                img_batch = self.load_single_img(img_generator, max_length)
+                _feed_dict = {self.input_img:img_batch}
+                pred_x_index = self.sess.run( self.pred_x_index,feed_dict = _feed_dict)
+                result = [ self.index2text[item_pred] for item_pred in pred_x_index] 
+            except:
+                return result
+        
+        return result
+            
 
 
         
